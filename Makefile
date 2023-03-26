@@ -41,6 +41,7 @@ build: $(PLUGINS_DIR)/$(PLUGIN_ID) export_preset ## Build the plugin
 		--path $(OPENGAMEPAD_UI_BASE) \
 		--export-pack "$(PLUGIN_NAME)" \
 		plugins/$(PLUGIN_ID)/dist/$(PLUGIN_ID).zip
+	cd dist && sha256sum $(PLUGIN_ID).zip > $(PLUGIN_ID).sha256.txt
 
 .PHONY: install
 install: dist ## Installs the plugin
