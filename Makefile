@@ -1,6 +1,10 @@
-PLUGIN_NAME ?= $(shell grep 'plugin\.id' plugin.json | awk '{print $$2}' | grep -o '"[^"]\+"' | sed 's/"//g')
+PLUGIN_ID ?= $(shell grep 'plugin\.id' plugin.json | awk '{print $$2}' | grep -o '"[^"]\+"' | sed 's/"//g')
+PLUGIN_NAME ?= $(shell grep 'plugin\.name' plugin.json | awk '{print $$2}' | grep -o '"[^"]\+"' | sed 's/"//g')
 
+GODOT ?= /usr/bin/godot
+OPENGAMEPAD_UI_REPO ?= https://github.com/ShadowBlip/OpenGamepadUI.git
 OPENGAMEPAD_UI_BASE ?= ../OpenGamepadUI
+EXPORT_PRESETS ?= $(OPENGAMEPAD_UI_BASE)/export_presets.cfg
 PLUGINS_DIR := $(OPENGAMEPAD_UI_BASE)/plugins
 BUILD_DIR := $(OPENGAMEPAD_UI_BASE)/build
 INSTALL_DIR := $(HOME)/.local/share/opengamepadui/plugins
@@ -26,20 +30,38 @@ help: ## Display this help.
 
 .PHONY: dist
 dist: build ## Build and package plugin
-	mkdir -p dist
-	touch dist/.gdignore
-	cp $(BUILD_DIR)/plugins.zip dist/$(PLUGIN_NAME).zip
 
 .PHONY: build
-build: $(PLUGINS_DIR)/$(PLUGIN_NAME) ## Build the plugin
+build: $(PLUGINS_DIR)/$(PLUGIN_ID) export_preset ## Build the plugin
 	@echo "Exporting plugin package"
-	cd $(OPENGAMEPAD_UI_BASE) && $(MAKE) plugins
+	cd $(OPENGAMEPAD_UI_BASE) && $(MAKE) addons
+	mkdir -p dist
+	touch dist/.gdignore
+	$(GODOT) --headless \
+		--path $(OPENGAMEPAD_UI_BASE) \
+		--export-pack "$(PLUGIN_NAME)" \
+		plugins/$(PLUGIN_ID)/dist/$(PLUGIN_ID).zip
 
 .PHONY: install
 install: dist ## Installs the plugin
 	cp -r dist/* "$(INSTALL_DIR)"
+	rm -rf $(INSTALL_DIR)/$(PLUGIN_ID)
 	@echo "Installed plugin to $(INSTALL_DIR)"
 
-$(PLUGINS_DIR)/$(PLUGIN_NAME):
-	ln -s $(PWD) $(PLUGINS_DIR)/$(PLUGIN_NAME)
+$(OPENGAMEPAD_UI_BASE):
+	git clone $(OPENGAMEPAD_UI_REPO) $@
 
+$(PLUGINS_DIR)/$(PLUGIN_ID): $(OPENGAMEPAD_UI_BASE)
+	if ! -f $(PLUGINS_DIR)/$(PLUGIN_ID); then ln -s $(PWD) $(PLUGINS_DIR)/$(PLUGIN_ID); fi
+
+.PHONY: export_preset
+export_preset: $(OPENGAMEPAD_UI_BASE) ## Configure plugin export preset
+	$(eval LAST_PRESET=$(shell grep -oEi '^\[preset\.([0-9]+)]' $(EXPORT_PRESETS) | tail -n 1))
+	$(eval LAST_PRESET_NUM=$(shell echo "$(LAST_PRESET)" | grep -oE '([0-9]+)'))
+	$(eval PRESET_NUM=$(shell echo "$(LAST_PRESET_NUM)+1" | bc))
+	@if grep 'name="$(PLUGIN_NAME)"' $(EXPORT_PRESETS) > /dev/null; then \
+		echo "Export preset already configured"; \
+	else \
+		echo "Preset not configured"; \
+		sed 's/PRESET_NUM/$(PRESET_NUM)/g; s/PLUGIN_NAME/$(PLUGIN_NAME)/g; s/PLUGIN_ID/$(PLUGIN_ID)/g' export_presets.cfg >> $(EXPORT_PRESETS); \
+	fi
