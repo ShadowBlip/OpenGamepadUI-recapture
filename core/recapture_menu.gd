@@ -39,6 +39,7 @@ func _start_recording() -> void:
 	args.append_array(env_vars)
 	args.append(recapture_bin)
 	args.append("record")
+	OS.execute("chmod", ["+x", recapture_bin])
 	logger.info("Starting capture command: " + cmd + " " + str(args))
 	pid = OS.create_process(cmd, args)
 	if pid < 1:
@@ -59,7 +60,7 @@ func _stop_recording() -> void:
 	rec_button.text = "Start recording"
 	recording = false
 	if pid > 0:
-		OS.kill(pid)
+		OS.execute("kill", ["-SIGINT", str(pid)])
 
 
 func _check_recording() -> void:
