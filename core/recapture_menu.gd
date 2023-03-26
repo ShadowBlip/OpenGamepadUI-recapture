@@ -47,6 +47,7 @@ func _start_recording() -> void:
 		notify.icon = icon
 		NotificationManager.show(notify)
 		return
+	logger.info("Started capture with pid: " + str(pid))
 	
 	# Update the button text
 	rec_button.text = "Stop recording"
@@ -60,7 +61,8 @@ func _stop_recording() -> void:
 	rec_button.text = "Start recording"
 	recording = false
 	if pid > 0:
-		OS.execute("kill", ["-SIGINT", str(pid)])
+		logger.info("Stopping capture with: kill -SIGINT " + str(pid))
+		OS.execute("bash", ["-c", "kill -SIGINT " + str(pid)])
 
 
 func _check_recording() -> void:
