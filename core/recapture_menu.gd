@@ -8,7 +8,7 @@ const icon := preload("res://plugins/recapture/assets/record-rec.svg")
 @onready var timer := $Timer
 
 var plugins_dir := ProjectSettings.globalize_path(PluginLoader.PLUGINS_DIR)
-var deps_dir := "/".join([plugins_dir, "recapture", "assets", "deps"])
+var deps_dir := "/".join([plugins_dir, "recapture", "plugins", "recapture", "assets", "deps"])
 var recapture_bin := "/".join([deps_dir, "recapture"])
 var gst_plugin_path := "/".join([deps_dir, "plugins"])
 var ld_library_path := "/".join([deps_dir, "lib"])
